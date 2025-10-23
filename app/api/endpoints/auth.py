@@ -1,5 +1,5 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.core.security import create_access_token
 from app.core.config import settings
@@ -54,10 +54,14 @@ async def login_for_access_token(
     }
 
 @router.post("/register", response_model=User)
-async def register_user(user_data: UserCreate):
+async def register_user(
+    user_data: UserCreate,
+    x_registration_secret: str = Header(None)  # Секретный ключ в заголовке
+):
     """
     Эндпоинт для регистрации нового пользователя.
-    
+    Требует секретный ключ в заголовке X-Registration-Secret.
+
     Args:
         user_data: Данные нового пользователя
     
@@ -67,6 +71,20 @@ async def register_user(user_data: UserCreate):
     Raises:
         HTTPException: Если пользователь уже существует
     """
+    # Проверяем, включена ли регистрация
+    if not settings.REGISTRATION_ENABLED:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Registration is disabled"
+        )
+    
+    # Проверяем секретный ключ
+    if x_registration_secret != settings.REGISTRATION_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid registration secret"
+        )
+    
     # Проверяем, не существует ли уже пользователь с таким username
     if auth_service.get_user(user_data.username):
         raise HTTPException(

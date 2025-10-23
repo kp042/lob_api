@@ -2,10 +2,12 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    # Убираем значения по умолчанию для критических настроек
-    # Теперь они ДОЛЖНЫ быть в .env файле
-    SECRET_KEY: str  # Обязательная настройка без значения по умолчанию
-    ALGORITHM: str = "HS256"  # Можно оставить разумное значение по умолчанию
+    # Регистрация новых пользователей
+    REGISTRATION_ENABLED: bool = False  # По умолчанию регистрация отключена
+    REGISTRATION_SECRET: str            # Секретный ключ для регистрации
+
+    SECRET_KEY: str                     # Обязательная настройка без значения по умолчанию
+    ALGORITHM: str = "HS256"            # Можно оставить разумное значение по умолчанию
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # Остальные настройки...

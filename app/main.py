@@ -1,44 +1,52 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.endpoints import auth  # Импортируем наш роутер аутентификации
+from app.api.endpoints import auth
 from app.core.config import settings
 from app.api.dependencies import get_current_active_user
 
-
+# Создаем приложение с защитой по умолчанию для ВСЕХ эндпоинтов
 app = FastAPI(
     title="Crypto Data API",
     description="API для доступа к данным стаканов ордеров с Binance",
     version="1.0.0"
 )
 
-# CORS middleware - позволяет браузерным приложениям обращаться к нашему API
+# CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # В продакшене заменить на конкретные домены!
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Подключаем роутер аутентификации
-app.include_router(auth.router, prefix="/auth", tags=["authentication"])
+# Создаем отдельный роутер для публичных эндпоинтов БЕЗ аутентификации
+public_router = APIRouter()
 
-@app.get("/")
+@public_router.get("/")
 async def root():
     return {"message": "Crypto Data API работает!"}
 
-@app.get("/health")
+@public_router.get("/health")
 async def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
-# Добавим тестовый защищенный эндпоинт для демонстрации
-@app.get("/protected-test")
-async def protected_test(current_user = Depends(get_current_active_user)):
+# Подключаем публичные эндпоинты к основному приложению БЕЗ зависимостей
+app.include_router(public_router, dependencies=[])
+
+# Подключаем роутер аутентификации БЕЗ защиты по умолчанию
+app.include_router(auth.router, prefix="/auth", tags=["authentication"], dependencies=[])
+
+# Защищенный эндпоинт (явно указываем зависимость)
+@app.get("/protected-test", dependencies=[Depends(get_current_active_user)])
+async def protected_test():
     """
     Тестовый защищенный эндпоинт.
     Требует аутентификацию через JWT токен.
     """
     return {
         "message": "Вы успешно получили доступ к защищенному эндпоинту!",
-        "user": current_user.username
+        "note": "Этот эндпоинт защищен явно указанной зависимостью"
     }
+
+# Защита для будущих эндпоинтов будет добавляться аналогично

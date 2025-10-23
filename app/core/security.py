@@ -7,9 +7,11 @@ from app.core.config import settings
 # Создаем контекст для хеширования паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 """
-CryptContext - объект из библиотеки passlib для работы с хешами паролей.
-- schemes: используемые алгоритмы (bcrypt - один из самых безопасных)
-- deprecated: помечает устаревшие алгоритмы как нерекомендуемые
+CryptContext с argon2 вместо bcrypt:
+- argon2 победитель Password Hashing Competition
+- Устойчив к GPU-атакам
+- Автоматически настраивает сложность
+- Нет проблем с версионной совместимостью как у bcrypt
 """
 
 def create_access_token(
