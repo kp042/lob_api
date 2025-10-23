@@ -1,7 +1,10 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
 from app.core.security import verify_token
-from app.services.auth import auth_service
+from app.db.session import get_db
+from app.db.models.user import User as UserModel
+from app.services.auth import AuthService
 
 # Создаем экземпляр OAuth2PasswordBearer
 # Этот класс автоматически извлекает токен из заголовка Authorization
@@ -12,7 +15,14 @@ OAuth2PasswordBearer - это схема безопасности FastAPI для
 - Автоматически проверяет заголовок Authorization: Bearer <token>
 """
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+# Зависимость для создания AuthService
+def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
+    return AuthService(db)
+
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    auth_service: AuthService = Depends(get_auth_service)
+):
     """
     Зависимость (Dependency) для получения текущего пользователя из JWT токена.
     

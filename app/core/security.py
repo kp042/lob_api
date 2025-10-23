@@ -5,13 +5,13 @@ from passlib.context import CryptContext
 from app.core.config import settings
 
 # Создаем контекст для хеширования паролей
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 """
-CryptContext с argon2 вместо bcrypt:
-- argon2 победитель Password Hashing Competition
-- Устойчив к GPU-атакам
-- Автоматически настраивает сложность
-- Нет проблем с версионной совместимостью как у bcrypt
+pbkdf2_sha256 преимущества:
+- Нет ограничений по длине пароля
+- Не требует внешних зависимостей (чистый Python)
+- Достаточно безопасен для большинства приложений
+- Встроен в Python (через hashlib)
 """
 
 def create_access_token(

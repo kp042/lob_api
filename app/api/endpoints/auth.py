@@ -5,8 +5,10 @@ from app.core.security import create_access_token
 from app.core.config import settings
 from app.models.token import Token
 from app.models.user import User, UserCreate
-from app.services.auth import auth_service
-from app.api.dependencies import get_current_active_user
+from app.api.dependencies import get_auth_service, get_current_active_user
+from sqlalchemy.orm import Session
+from app.db.session import get_db
+from app.services.auth import AuthService
 
 # Создаем роутер для аутентификации
 # Префикс "/auth" будет добавлен ко всем эндпоинтам этого роутера
@@ -14,7 +16,8 @@ router = APIRouter()
 
 @router.post("/token", response_model=Token)
 async def login_for_access_token(
-    form_data: OAuth2PasswordRequestForm = Depends()
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    auth_service: AuthService = Depends(get_auth_service)
 ):
     """
     OAuth2 совместимый эндпоинт для получения JWT токена.
@@ -30,7 +33,7 @@ async def login_for_access_token(
     
     Raises:
         HTTPException: Если аутентификация не удалась
-    """
+    """    
     # Аутентифицируем пользователя
     user = auth_service.authenticate_user(form_data.username, form_data.password)
     if not user:
@@ -56,7 +59,8 @@ async def login_for_access_token(
 @router.post("/register", response_model=User)
 async def register_user(
     user_data: UserCreate,
-    x_registration_secret: str = Header(None)  # Секретный ключ в заголовке
+    x_registration_secret: str = Header(None),  # Секретный ключ в заголовке
+    auth_service: AuthService = Depends(get_auth_service)
 ):
     """
     Эндпоинт для регистрации нового пользователя.
@@ -84,16 +88,18 @@ async def register_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid registration secret"
         )
-    
+
     # Проверяем, не существует ли уже пользователь с таким username
     if auth_service.get_user(user_data.username):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username already registered"
         )
-    
+
     # Создаем нового пользователя
     new_user = auth_service.create_user(user_data)
+    
+
     return new_user
 
 @router.get("/me", response_model=User)
@@ -110,4 +116,9 @@ async def read_users_me(current_user: User = Depends(get_current_active_user)):
     Returns:
         Информация о текущем пользователе
     """
-    return current_user
+    return User(
+        id=current_user.id,
+        username=current_user.username,
+        email=current_user.email,
+        is_active=current_user.is_active
+    )
