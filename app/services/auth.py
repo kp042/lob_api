@@ -1,38 +1,35 @@
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from app.core.security import verify_password, get_password_hash, verify_token
-from app.db.models.user import User as UserModel
+from app.db.models.user import User as UserModel, UserRole
 from app.models.user import User as UserSchema, UserCreate, UserInDB
 from sqlalchemy.orm import Session
 
 
 class AuthService:
     """
-    Сервис для управления аутентификацией и пользователями.
-    Содержит бизнес-логику работы с пользователями.
+    Service for managing authentication and users.
     """
     def __init__(self, db: Session):
         self.db = db
     
     def get_user_by_username(self, username: str):
-        """Получает пользователя из базы данных по username"""
         return self.db.query(UserModel).filter(UserModel.username == username).first()
     
     def get_user(self, username: str):
-        """Получает пользователя для внутреннего использования"""
         db_user = self.get_user_by_username(username)
-        if db_user:
+        if db_user:            
             return UserInDB(
                 id=db_user.id,
                 username=db_user.username,
                 email=db_user.email,
                 is_active=db_user.is_active,
-                hashed_password=db_user.hashed_password
+                hashed_password=db_user.hashed_password,
+                role=db_user.role
             )
         return None
     
     def authenticate_user(self, username: str, password: str):
-        """Аутентифицирует пользователя"""
         db_user = self.get_user_by_username(username)
         if not db_user:
             return None
@@ -44,22 +41,24 @@ class AuthService:
             id=db_user.id,
             username=db_user.username,
             email=db_user.email,
-            is_active=db_user.is_active
+            is_active=db_user.is_active,
+            role=db_user.role
         )
     
-    def create_user(self, user_data: UserCreate):
-        """Создает нового пользователя в базе данных"""
-        # Проверяем, не существует ли уже пользователь
+    def create_user(self, user_data: UserCreate, is_admin: bool = False):
+        # Check if the user already exists
         if self.get_user_by_username(user_data.username):
             return None
-        
-        # Создаем нового пользователя
+
         hashed_password = get_password_hash(user_data.password)
+        role = UserRole.ADMIN if is_admin else UserRole.USER
+
         db_user = UserModel(
             username=user_data.username,
             email=user_data.email,
             hashed_password=hashed_password,
-            is_active=True
+            is_active=True,
+            role=role
         )
         
         self.db.add(db_user)
@@ -70,6 +69,7 @@ class AuthService:
             id=db_user.id,
             username=db_user.username,
             email=db_user.email,
-            is_active=db_user.is_active
+            is_active=db_user.is_active,
+            role=db_user.role
         )
     

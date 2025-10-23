@@ -2,18 +2,17 @@ from pydantic_settings import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
-    # Регистрация новых пользователей    
-    REGISTRATION_ENABLED: bool = False        # По умолчанию регистрация отключена
-    REGISTRATION_SECRET: Optional[str] = None # Секретный ключ для регистрации
+    REGISTRATION_ENABLED: bool = False        # Registration is disabled by default
+    REGISTRATION_SECRET: Optional[str] = None # Secret key to registration (to create user)
+    ADMIN_SECRET: Optional[str] = None        # Secret to create admin
+    SECRET_KEY: str
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # Настройки базы данных
+    # Service DB
     DATABASE_URL: str = "sqlite:///./crypto_api.db"
 
-    SECRET_KEY: str                     # Обязательная настройка без значения по умолчанию
-    ALGORITHM: str = "HS256"            # Можно оставить разумное значение по умолчанию
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    
-    # Остальные настройки...
+    # Clickhouse DB
     CLICKHOUSE_HOST: str = "localhost"
     CLICKHOUSE_PORT: int = 9000
     CLICKHOUSE_USER: str = "default" 

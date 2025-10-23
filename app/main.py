@@ -1,23 +1,20 @@
 from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-
 from app.api.endpoints import auth
 from app.core.config import settings
 from app.api.dependencies import get_current_active_user
 from app.db.session import get_db, engine
 from app.db.base import Base
-
 from app.middleware.logging import log_requests_middleware
+from app.api.endpoints import admin
 
-
-# Создаем таблицы в базе данных
+# Create tables in the db
 Base.metadata.create_all(bind=engine)
 
-# Создаем приложение с защитой по умолчанию для ВСЕХ эндпоинтов
 app = FastAPI(
-    title="Crypto Data API",
-    description="API для доступа к данным стаканов ордеров с Binance",
+    title="LOB Data API",
+    description="API for accessing Limit Order Book (LOB) data from Binance",
     version="1.0.0"
 )
 
@@ -30,41 +27,30 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Middleware для логирования
+# Middleware for logging in db requests
 app.middleware("http")(log_requests_middleware)
 
-# Создаем отдельный роутер для публичных эндпоинтов БЕЗ аутентификации
+# Router for public endpoints
 public_router = APIRouter()
 
 @public_router.get("/")
 async def root():
-    return {"message": "Crypto Data API работает!"}
+    return {"message": "LOB Data API is working!"}
 
 @public_router.get("/health")
 async def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
-# Подключаем публичные эндпоинты к основному приложению БЕЗ зависимостей
+# Connect public endpoints to the main app without dependencies
 app.include_router(public_router, dependencies=[])
 
-# Подключаем роутер аутентификации БЕЗ защиты по умолчанию
+# Connect an authentication router without default security
 app.include_router(auth.router, prefix="/auth", tags=["authentication"], dependencies=[])
 
-# # Защищенный эндпоинт (явно указываем зависимость)
-# @app.get("/protected-test", dependencies=[Depends(get_current_active_user)])
-# async def protected_test():
-#     """
-#     Тестовый защищенный эндпоинт.
-#     Требует аутентификацию через JWT токен.
-#     """
-#     return {
-#         "message": "Вы успешно получили доступ к защищенному эндпоинту!",
-#         "note": "Этот эндпоинт защищен явно указанной зависимостью"
-#     }
+# Connect the admin router
+app.include_router(admin.router, prefix="/admin", tags=["administration"])
 
-# # Защита для будущих эндпоинтов будет добавляться аналогично
-
-# Защищенный эндпоинт
+# Protected endpoint test
 @app.get("/protected-test")
 async def protected_test(current_user = Depends(get_current_active_user)):
     return {
@@ -72,12 +58,12 @@ async def protected_test(current_user = Depends(get_current_active_user)):
         "user": current_user.username
     }
 
-# Эндпоинт для проверки базы данных
+# Endpoint for checking the db
 @app.get("/db-status")
 async def db_status(db: Session = Depends(get_db)):
     from app.db.models.user import User
     from app.db.models.api_log import ApiLog
-
+    
     user_count = db.query(User).count()
     log_count = db.query(ApiLog).count()
     

@@ -7,7 +7,7 @@ class ApiLog(Base):
     __tablename__ = "api_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Может быть None для публичных эндпоинтов
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # None for public endpoints
     endpoint = Column(String, nullable=False)
     method = Column(String, nullable=False)
     status_code = Column(Integer, nullable=False)
@@ -15,7 +15,6 @@ class ApiLog(Base):
     user_agent = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    # Связь с пользователем
     user = relationship("User", backref="api_logs")
     
     def __repr__(self):
