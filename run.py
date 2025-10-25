@@ -1,10 +1,10 @@
 import uvicorn
 
-if __name__ == "__main__":
-    # Запускаем сервер uvicorn
+
+if __name__ == "__main__":    
     uvicorn.run(
-        "app.main:app",    # Путь к приложению: "папка.файл:экземпляр"
-        host="0.0.0.0",    # Слушаем все интерфейсы
-        port=8000,         # Порт
-        reload=True        # Автоматическая перезагрузка при изменении кода
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
     )

@@ -2,7 +2,6 @@ import asyncio
 import sys
 import os
 
-# Добавляем корень проекта в Python path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
@@ -10,7 +9,7 @@ sys.path.append(project_root)
 import logging
 from app.db.clickhouse import AsyncClickHouseClient
 
-# Настраиваем логирование для теста
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -19,17 +18,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 async def test_clickhouse():
-    """Тестируем подключение и базовые запросы к ClickHouse"""
-    
     logger.info("Starting ClickHouse connection test...")
     
     async with AsyncClickHouseClient() as client:
         try:
-            # Тест подключения
+            # Test: connection to Clickhouse
             result = await client.execute("SELECT 1 as test_value, 'hello' as greeting")
             logger.info(f"Connection test result: {result}")
             
-            # Получаем список символов
+            # Test: getting all symbols
             symbols = await client.execute("""
                 SELECT DISTINCT symbol 
                 FROM blob_rest_all_aggregated 
@@ -38,7 +35,7 @@ async def test_clickhouse():
             symbol_list = [s['symbol'] for s in symbols]
             logger.info(f"Available symbols: {symbol_list}")
             
-            # Тестируем параметризованные запросы с правильными плейсхолдерами
+            # Test: queries with params
             if symbol_list:
                 first_symbol = symbol_list[0]
                 data = await client.execute("""
@@ -55,6 +52,7 @@ async def test_clickhouse():
             logger.error(f"Test failed with error: {e}")
             import traceback
             traceback.print_exc()
+
 
 if __name__ == "__main__":
     asyncio.run(test_clickhouse())
