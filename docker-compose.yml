@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  lob-api:
+    build: .
+    container_name: lob_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=sqlite:///./data/crypto_api.db
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
