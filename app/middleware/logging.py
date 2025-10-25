@@ -4,14 +4,42 @@ from app.db.session import SessionLocal
 from app.db.models.api_log import ApiLog
 from app.core.security import verify_token
 import time
+import logging
+
+
+logger = logging.getLogger(__name__)
+
+
+"""
+TODO:
+    Add asynchronous logging
+    Send logging to a background task
+
+    async def async_logging(request: Request, call_next):
+        start_time = time.time()
+        response = await call_next(request)
+        process_time = time.time() - start_time
+        
+        asyncio.create_task(save_log_async(request, response, process_time))
+
+    async def save_log_async(request, response, process_time):
+        # Asynchronously save the log
+        # This doesn't block the main thread
+        pass
+"""
 
 async def log_requests_middleware(request: Request, call_next):
-    start_time = time.time()    
-    response = await call_next(request)    
-    process_time = time.time() - start_time
+    start_time = time.time()
     
-    db = SessionLocal()
     try:
+        response = await call_next(request)
+        process_time = time.time() - start_time
+    except Exception as e:
+        logger.error(f"Request processing error: {e}")
+        raise    
+    
+    try:
+        db = SessionLocal()
         user_id = None
         authorization = request.headers.get("authorization")
         
@@ -37,11 +65,20 @@ async def log_requests_middleware(request: Request, call_next):
             user_agent=request.headers.get("user-agent")
         )        
         db.add(api_log)
-        db.commit()        
+        db.commit()
+
+        logger.info(
+            f"Request: {request.method} {request.url.path} "
+            f"Status: {response.status_code} "
+            f"Duration: {process_time:.3f}s "
+            f"User: {user_id or 'anonymous'}"
+        )
     except Exception as e:
-        db.rollback()
-        print(f"Logging error: {e}")
+        logger.error(f"Logging error: {e}")
+        if db:
+            db.rollback()        
     finally:
-        db.close()
+        if db:
+            db.close()
     
     return response

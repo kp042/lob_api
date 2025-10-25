@@ -13,11 +13,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./crypto_api.db"
 
     # Clickhouse DB
-    CLICKHOUSE_HOST: str = "localhost"
-    CLICKHOUSE_PORT: int = 9000
-    CLICKHOUSE_USER: str = "default" 
-    CLICKHOUSE_PASSWORD: str = ""
-    CLICKHOUSE_DATABASE: str = "cryptodata"
+    CLICKHOUSE_HOST: str
+    CLICKHOUSE_PORT: int = 8123
+    CLICKHOUSE_USER: str
+    CLICKHOUSE_PASSWORD: str
+    CLICKHOUSE_DATABASE: str
     
     class Config:
         env_file = ".env"
