@@ -15,4 +15,4 @@ RUN mkdir -p logs
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "188.93.140.207", "--port", "8000"]
+CMD ["python", "run.py"]
